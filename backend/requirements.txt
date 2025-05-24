@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+PyMuPDF
+pillow
+pytesseract
+sentence-transformers
+faiss-cpu
+requests
