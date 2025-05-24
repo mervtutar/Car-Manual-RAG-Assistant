@@ -1,5 +1,7 @@
 # hyundai-i20-rag
-hyundai-i20n-rag/
+
+```plaintext
+hyundai-i20-rag/
 │
 ├── backend/
 │   ├── main.py                   # FastAPI app, RAG pipeline kodu
@@ -7,7 +9,7 @@ hyundai-i20n-rag/
 │   ├── chunk.py                  # chunk_text fonksiyonu
 │   ├── embed_index.py            # embedding ve FAISS indeksleme
 │   ├── requirements.txt          # Python bağımlılıkları
-│   ├── i20N-Kullanim-Kilavuzu.pdf
+│   ├── i20-Kullanim-Kilavuzu.pdf
 │   └── Dockerfile                # Backend container tanımı
 │
 ├── frontend/
@@ -20,7 +22,7 @@ hyundai-i20n-rag/
 │   └── Dockerfile                # React container tanımı
 │
 ├── models/
-│   └── i20n_index.faiss          # FAISS index dosyası
+│   └── i20_index.faiss           # FAISS index dosyası
 │
 ├── docker-compose.yml            # Backend, frontend, ollama servisleri
 └── README.md                     # Proje açıklaması, kurulum adımları
