@@ -4,5 +4,6 @@ PyMuPDF
 pillow
 pytesseract
 sentence-transformers
+nltk
 faiss-cpu
 requests
