@@ -9,6 +9,9 @@ COPY requirements.txt .
 # 3. Bağımlılıkları yükle
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Tesseract OCR'yi yüklemek için gerekli paketleri kur
+RUN apt-get update && apt-get install -y tesseract-ocr && apt-get clean
+
 # 4. Tüm backend kodunu kopyala
 COPY . .
 
