@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.log
+.git
+.gitignore
+.vscode
+i20_index.faiss
+chunks.pkl
