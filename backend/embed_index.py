@@ -36,3 +36,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# docker run -it --rm -v %cd%:/app hyundai-backend python embed_index.py
