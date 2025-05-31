@@ -7,8 +7,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # pip’i güncelle ve requirements’ı kur
-RUN pip install --upgrade pip
-RUN pip install --default-timeout=300 --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir --default-timeout=300 -r requirements.txt
 
 # Uygulama kodunu kopyala
 COPY . .
