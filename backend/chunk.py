@@ -31,3 +31,4 @@ if __name__ == "__main__":
     chunklar = chunk_text_sentences(metinler, sentences_per_chunk=5, overlap=1)
     for idx, chunk in enumerate(chunklar[:5], 1):
         print(f"--- Chunk {idx} (Sayfa {chunk['page']}) ---\n{chunk['text']}\n")
+# docker run -it --rm -v %cd%:/app hyundai-backend python chunk.py
