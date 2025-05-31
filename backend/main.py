@@ -1,78 +1,55 @@
-import os
-import requests
-import faiss
-import pickle
-from fastapi import FastAPI, HTTPException
+# backend/main.py
+
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Dict
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+import pickle
+import requests
 
-from embed_index import get_embedding_model, load_faiss_index, embed_queries
+# Dosya yolları
+EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+INDEX_PATH = "i20_index.faiss"
+CHUNKS_PATH = "chunks.pkl"
 
-app = FastAPI(title="Car Manual RAG-Based Assistant")
+# Model ve index yükleniyor
+model = SentenceTransformer(EMBEDDING_MODEL)
+index = faiss.read_index(INDEX_PATH)
+with open(CHUNKS_PATH, "rb") as f:
+    chunks = pickle.load(f)
 
-# Ollama server settings (defaults)
-LLM_URL   = os.getenv("LLM_URL", "http://localhost:11434")
-LLM_MODEL = os.getenv("LLM_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")  # or your Ollama model name
+app = FastAPI(title="Hyundai i20 RAG API")
 
-class QueryRequest(BaseModel):
+class QuestionRequest(BaseModel):
     question: str
-    top_k: int = 3
+    top_k: int = 4
 
-class Source(BaseModel):
-    page: int
-    text: str
-    score: float
+def call_ollama(question, context, model="llama3"):
+    prompt = f"Soru: {question}\nBağlam:\n{context}\nCevap:"
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False
+    }
+    response = requests.post("http://ollama:11434/api/generate", json=payload)
+    return response.json().get("response", "Cevap üretilemedi.")
 
-class QueryResponse(BaseModel):
-    answer: str
-    sources: List[Source]
+@app.post("/ask")
+def ask(payload: QuestionRequest):
+    q_emb = model.encode([payload.question])
+    D, I = index.search(np.array(q_emb, dtype="float32"), payload.top_k)
+    results = [chunks[i] for i in I[0]]
+    context = "\n".join([r['text'] for r in results])
 
-# Load FAISS index + metadata once at startup
-index, metadata = load_faiss_index()  # metadata: list of {"page":…, "text":…}
+    # Ollama ile LLM cevabı al
+    answer = call_ollama(payload.question, context)
 
-@app.post("/query", response_model=QueryResponse)
-def query(req: QueryRequest):
-    # 1) Embed user question
-    q_embs = embed_queries([req.question])
-    if not q_embs:
-        raise HTTPException(500, "Failed to embed query")
-    q_emb = q_embs[0].astype("float32")
+    return {
+        "question": payload.question,
+        "answer": answer,
+        "sources": results
+    }
 
-    # 2) FAISS search
-    D, I = index.search(q_emb.reshape(1, -1), req.top_k)
-    D, I = D[0], I[0]
-
-    # 3) Build prompt
-    contexts = []
-    for idx, score in zip(I, D):
-        meta = metadata[idx]
-        contexts.append(f"Page {meta['page']}: {meta['text']}")
-    prompt = (
-        "You are an expert car-manual assistant. Use the following excerpts "
-        "from the manual to answer the user’s question.\n\n"
-        + "\n".join(contexts)
-        + f"\n\nUser: {req.question}\nAssistant:"
-    )
-
-    # 4) Call Ollama HTTP API
-    try:
-        resp = requests.post(
-            f"{LLM_URL}/completions?model={LLM_MODEL}",
-            json={
-                "prompt": prompt,
-                "max_tokens": 512,
-                "temperature": 0.0
-            },
-            timeout=30,
-        )
-        resp.raise_for_status()
-        completion = resp.json()["choices"][0]["text"].strip()
-    except Exception as e:
-        raise HTTPException(502, f"LLM request failed: {e}")
-
-    # 5) Return answer + sources
-    sources = [
-        Source(page=metadata[i]["page"], text=metadata[i]["text"], score=float(score))
-        for i, score in zip(I, D)
-    ]
-    return QueryResponse(answer=completion, sources=sources)
+# Çalıştırmak için:
+# uvicorn main:app --reload --host 0.0.0.0 --port 8000
