@@ -4,6 +4,5 @@ build
 *.log
 .git
 .gitignore
-nginx.conf
 .vscode
 .env
