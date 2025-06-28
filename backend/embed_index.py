@@ -8,8 +8,8 @@ from chunk import chunk_text_sentences
 
 PDF_PATH = "i20-Kullanim-Kilavuzu.pdf"
 N_PAGES = None    # Tüm sayfalar için None bırakabilirsin
-SENTENCES_PER_CHUNK = 3
-OVERLAP = 1
+SENTENCES_PER_CHUNK = 8
+OVERLAP = 3
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
