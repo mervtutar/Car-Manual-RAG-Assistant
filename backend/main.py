@@ -2,67 +2,69 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
-import pickle
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering, pipeline
-import torch
-
-EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
-INDEX_PATH = "i20_index.faiss"
-CHUNKS_PATH = "chunks.pkl"
-
-embedding_model = SentenceTransformer(EMBEDDING_MODEL)
-index = faiss.read_index(INDEX_PATH)
-with open(CHUNKS_PATH, "rb") as f:
-    chunks = pickle.load(f)
-
-QA_MODEL_NAME = "dbmdz/bert-base-turkish-uncased"
-tokenizer = AutoTokenizer.from_pretrained(QA_MODEL_NAME)
-qa_model = AutoModelForQuestionAnswering.from_pretrained(QA_MODEL_NAME)
+from rank_bm25 import BM25Okapi
+import faiss, numpy as np, pickle, torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-qa_model.to(device)
+EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+QA_MODEL = "ucsahin/mT5-base-turkish-qa"
 
-# CORS middleware
-app = FastAPI(title="Hyundai i20 RAG API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Semantic embedding + FAISS yükle
+embedding_model = SentenceTransformer(EMBED_MODEL, device=device)
+index = faiss.read_index("i20_index.faiss")
+with open("chunks.pkl", "rb") as f:
+    chunks = pickle.load(f)
+
+# BM25 index
+bm25 = BM25Okapi([c["text"].split() for c in chunks])
+
+# Generative QA modeli
+tokenizer = AutoTokenizer.from_pretrained(QA_MODEL)
+t5_model = AutoModelForSeq2SeqLM.from_pretrained(QA_MODEL).to(device)
+
+app = FastAPI(title="Hyundai i20 RAG – Enhanced CoT")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class QuestionRequest(BaseModel):
     question: str
     top_k: int = 4
 
-# Extractive QA fonksiyonu
-def answer_question(question: str, context: str) -> str:
-    qa_pipeline = pipeline(
-        "question-answering",
-        model=qa_model,
-        tokenizer=tokenizer,
-        device=0 if device.type == "cuda" else -1
+# FAISS + BM25 hibrit retrieval
+def hybrid_retrieve(question: str, top_k: int):
+    q_emb = embedding_model.encode([question])
+    Dv, Iv = index.search(np.array(q_emb, dtype="float32"), top_k * 2)
+    bm25_scores = bm25.get_scores(question.split())
+    Ib = np.argsort(bm25_scores)[-top_k * 2:]
+    combined = list(dict.fromkeys(list(Iv[0]) + list(Ib)))
+    return combined[:top_k]
+
+# Geliştirilmiş CoT prompt
+def answer_question(question: str, contexts: list[str]) -> str:
+    prompt = f"Soru: {question}\n"
+    prompt += "1) Öncelikle soruyu kendi kelimelerinle kısaca özetle.\n"
+    prompt += "2) Aşağıdaki metinlerden hangi bilgilerin kullanılabileceğini belirt.\n"
+    for i, txt in enumerate(contexts, 1):
+        snippet = txt.replace("\n", " ")
+        prompt += f"{i}) {snippet}\n"
+    prompt += (
+        "3) Son olarak, adım adım düşün (Düşünce), ardından net bir şekilde 'Cevap:' kısmında yaz.\n"
     )
-    result = qa_pipeline(question=question, context=context)
-    return result['answer']
+    
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=800).to(device)
+    out = t5_model.generate(
+        inputs.input_ids,
+        max_new_tokens=200,
+        num_beams=4,
+        early_stopping=True,
+        no_repeat_ngram_size=2
+    )
+    return tokenizer.decode(out[0], skip_special_tokens=True).strip()
 
 @app.post("/ask")
-def ask(payload: QuestionRequest):
-    q_emb = embedding_model.encode([payload.question])
-    D, I = index.search(np.array(q_emb, dtype="float32"), payload.top_k)
-    results = [chunks[i] for i in I[0]]
-    context = "\n".join([r['text'] for r in results])
-
-    answer = answer_question(payload.question, context)
-
-    return {
-        "question": payload.question,
-        "answer": answer,
-        "sources": results
-    }
-
-# Çalıştırmak için:
-# uvicorn main:app --reload --host 0.0.0.0 --port 8000
+def ask(req: QuestionRequest):
+    idxs = hybrid_retrieve(req.question, req.top_k)
+    ctxs = [chunks[i]["text"] for i in idxs]
+    answer = answer_question(req.question, ctxs)
+    sources = [{"text": chunks[i]["text"], "page": chunks[i].get("page")} for i in idxs]
+    return {"question": req.question, "answer": answer, "sources": sources}

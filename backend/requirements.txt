@@ -9,3 +9,4 @@ requests
 easyocr
 transformers 
 torch
+rank_bm25
