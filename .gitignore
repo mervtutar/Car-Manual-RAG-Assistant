@@ -1,3 +1,5 @@
 backend/__pycache__/
 backend/venv/
 
+frontend/public/favicon.ico
+frontend/public/logo192.png
