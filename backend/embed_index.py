@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import pickle
-
+import torch
 from extract import extract_text_with_fallback
 from chunk import chunk_text_sentences
 
@@ -10,6 +10,8 @@ PDF_PATH = "i20-Kullanim-Kilavuzu.pdf"
 N_PAGES = None    # Tüm sayfalar için None bırakabilirsin
 SENTENCES_PER_CHUNK = 3
 OVERLAP = 1
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def main():
     print("1. PDF'den metin çıkarılıyor...")
@@ -19,7 +21,7 @@ def main():
     chunks = chunk_text_sentences(page_texts, sentences_per_chunk=SENTENCES_PER_CHUNK, overlap=OVERLAP)
 
     print("3. Embedding hesaplanıyor...")
-    model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+    model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2", device=device)
     chunk_texts = [c["text"] for c in chunks]
     embeddings = model.encode(chunk_texts, show_progress_bar=True)
 
