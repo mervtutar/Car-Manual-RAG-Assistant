@@ -7,3 +7,5 @@ nltk
 faiss-cpu
 requests
 easyocr
+transformers 
+torch
