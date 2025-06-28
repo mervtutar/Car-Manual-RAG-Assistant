@@ -1,2 +1,6 @@
 backend/__pycache__/extract.cpython-310.pyc
 backend/__pycache__/chunk.cpython-310.pyc
+backend/__pycache__/extract.cpython-311.pyc
+backend/__pycache__/chunk.cpython-311.pyc
+backend/venv/
+
