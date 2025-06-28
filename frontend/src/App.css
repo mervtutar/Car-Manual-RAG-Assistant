@@ -1,0 +1,58 @@
+.app-container {
+  background: url('https://www.hyundai.com/content/dam/hyundai/tr/tr/images/find-a-car/pip/yeni-i20/Hyundai-i20-1860x540.jpg')
+              no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.chat-box {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.message-user {
+  background: #007bff;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 18px 18px 0 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: inline-block;
+  max-width: 80%;
+}
+
+.message-bot {
+  background: #f1f1f1;
+  padding: 14px;
+  border-radius: 18px 18px 18px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  max-width: 80%;
+}
+
+.message-bot button {
+  background: #e0e0e0;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.chat-box input {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.chat-box button {
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
