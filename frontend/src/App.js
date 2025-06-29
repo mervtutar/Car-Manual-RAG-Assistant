@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./App.css"; // Güncellenmiş CSS'i içe aktar
+import "./App.css"; // CSS’in aynen kullanılmaya devam ediliyor
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -42,9 +42,9 @@ function App() {
     }
   };
 
-  const handleRetry = idx => {
-    setQuestion(history[idx].question);
-    setHistory(prev => prev.filter((_, i) => i !== idx));
+  const handleRetry = originalIdx => {
+    setQuestion(history[originalIdx].question);
+    setHistory(prev => prev.filter((_, i) => i !== originalIdx));
   };
 
   return (
@@ -71,46 +71,51 @@ function App() {
         </div>
 
         <div>
-          {history.map((h, idx) => (
-            <div key={idx} style={{ marginBottom: 24 }}>
-              <div style={{ textAlign: "right" }}>
-                <div className="message-user">{h.question}</div>
-                <div style={{ fontSize: 12, color: "#ddd", marginTop: 4 }}>{h.time}</div>
-              </div>
+          {history.slice().reverse().map((h, revIdx) => {
+            const originalIdx = history.length - 1 - revIdx;
+            return (
+              <div key={originalIdx} style={{ marginBottom: 24 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div className="message-user">{h.question}</div>
+                  <div style={{ fontSize: 12, color: "#ddd", marginTop: 4 }}>{h.time}</div>
+                </div>
 
-              <div style={{ textAlign: "left", marginTop: 8 }}>
-                {h.answer ? (
-                  <div className="message-bot">
-                    <div style={{ whiteSpace: "pre-wrap" }}>{h.answer}</div>
-                    <h4 style={{ marginTop: 12 }}>Kaynaklar:</h4>
-                    <ul style={{ paddingLeft: 20 }}>
-                      {h.sources.map((src, sidx) => (
-                        <li key={sidx}>
-                          <b>Sayfa {src.page || "?"}:</b> {src.text.length > 200
-                            ? src.text.slice(0, 200) + "..."
-                            : src.text
-                          }
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      style={{
-                        marginTop: 8, padding: "6px 12px",
-                        background: "#e0e0e0", border: "none", borderRadius: 4, cursor: "pointer"
-                      }}
-                      onClick={() => handleRetry(idx)}
-                    >
-                      Tekrar Sor
-                    </button>
-                  </div>
-                ) : h.answer === null ? (
-                  loading && idx === history.length - 1 ? <div>Cevap aranıyor...</div> : null
-                ) : (
-                  <div style={{ color: "red" }}>{h.answer}</div>
-                )}
+                <div style={{ textAlign: "left", marginTop: 8 }}>
+                  {h.answer ? (
+                    <div className="message-bot">
+                      <div style={{ whiteSpace: "pre-wrap" }}>{h.answer}</div>
+                      <h4 style={{ marginTop: 12 }}>Kaynaklar:</h4>
+                      <ul style={{ paddingLeft: 20 }}>
+                        {h.sources.map((src, sidx) => (
+                          <li key={sidx}>
+                            <b>Sayfa {src.page || "?"}:</b>{" "}
+                            {src.text.length > 200 ? src.text.slice(0, 200) + "..." : src.text}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        style={{
+                          marginTop: 8,
+                          padding: "6px 12px",
+                          background: "#e0e0e0",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer"
+                        }}
+                        onClick={() => handleRetry(originalIdx)}
+                      >
+                        Tekrar Sor
+                      </button>
+                    </div>
+                  ) : h.answer === null ? (
+                    revIdx === 0 && loading ? <div>Cevap aranıyor...</div> : null
+                  ) : (
+                    <div style={{ color: "red" }}>{h.answer}</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
