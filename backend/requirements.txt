@@ -10,3 +10,4 @@ easyocr
 transformers 
 torch
 rank_bm25
+langchain
