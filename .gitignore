@@ -3,3 +3,8 @@ backend/venv/
 
 frontend/public/favicon.ico
 frontend/public/logo192.png
+frontend/public/logo512.png
+frontend/public/manifest.json
+frontend/public/robots.txt
+frontend/src/reportWebVitals.js
+frontend/public/index.html
