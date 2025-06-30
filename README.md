@@ -1,4 +1,7 @@
-# hyundai-i20-rag
+
+# Hyundai i20 Smart Q&A System
+
+This project is an AI-powered assistant (RAG-based QA) that reads and understands the **Hyundai i20** user manual, and can instantly answer technical questions in natural Turkish language.
 
 ```plaintext
 Car-Manual-RAG-Assistant/
@@ -31,9 +34,6 @@ Car-Manual-RAG-Assistant/
 
 ![i20](https://github.com/user-attachments/assets/01a86ad1-77ba-472a-88ab-b608b2129bf9)
 
-# Hyundai i20 Smart Q&A System
-
-This project is an AI-powered assistant (RAG-based QA) that reads and understands the **Hyundai i20 / BAYON** user manual, and can instantly answer technical questions in natural Turkish language.
 
 ---
 
