@@ -24,9 +24,7 @@ Car-Manual-RAG-Assistant/
 │   │   ├── App.js                # React Q&A interface
 │   │   └── index.js
 │   ├── package.json              # Frontend npm dependencies & scripts
-│   └── Dockerfile                # Frontend Docker container definition
 │
-├── docker-compose.yml            # Compose file for backend and frontend containers
 └── README.md                     # Project description, installation & usage instructions
 
 
