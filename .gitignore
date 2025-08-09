@@ -8,3 +8,4 @@ frontend/public/manifest.json
 frontend/public/robots.txt
 frontend/src/reportWebVitals.js
 frontend/public/index.html
+backend/.env
