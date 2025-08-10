@@ -10,6 +10,8 @@ import faiss, numpy as np, pickle, torch
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering, pipeline, AutoModelForCausalLM
 import google.generativeai as genai
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from dotenv import load_dotenv
+load_dotenv()  # .env dosyasındaki değişkenleri yükler
 
 EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 EXTRACTIVE_MODEL = "dbmdz/bert-base-turkish-cased"
@@ -77,40 +79,38 @@ def best_extractive_answer(question: str, contexts: list[str]) -> str:
             continue
     return best_ans if best_ans else ""
 
-def generate_answer(system_hint: str, question: str, context: str, lang: str = "tr") -> str:
+# --- main.py: generate_answer DÜZELTME ---
+def generate_answer(question: str, context: str, lang: str = "tr") -> str:
     model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = (
-        f"{system_hint}\n\n"
+        "Sen Hyundai i20 kullanım kılavuzu asistanısın. "
+        "Verilen bağlamı kullanarak yanıt ver.\n\n"
         f"Kullanıcı sorusu: {question}\n\n"
         f"Bağlam metni:\n{context}\n\n"
-        "Yanıt verirken bağlam dışına çıkma. Teknik ve net ol."
+        "Bağlam dışına çıkma açıklayıcı ve net ol, halusinasyon yapma."
     )
     resp = model.generate_content(prompt)
-    return resp.text.strip() if hasattr(resp, 'text') else "Yanıt üretilemedi."
-
-    
+    return resp.text.strip() if hasattr(resp, "text") else "Yanıt üretilemedi."
 
 
-@app.post("/ask")
+# --- main.py: ask endpoint İÇİN ÇAĞRI DÜZELTME ---
 @app.post("/ask")
 def ask(req: QuestionRequest):
     idxs = hybrid_retrieve(req.question, req.top_k)
     ctxs = [chunks[i]["text"] for i in idxs]
+
+    # bağlamı tek bir metne birleştir
+    context = "\n\n---\n\n".join(ctxs)
+
+    # sistem rolünüzü net yazın (örnek)
+    system_hint = (
+        "Sen Hyundai i20 kullanım kılavuzuna dayanan bir yardımcıısın. "
+        "Cevapları Türkçe ve teknik ver. Bağlam dışına çıkma."
+    )
+
+    answer = generate_answer(system_hint, req.question, context)
+    if not answer.strip():
+        answer = ctxs[0]
+
     sources = [{"text": chunks[i]["text"], "page": chunks[i].get("page")} for i in idxs]
-
-    extractive = best_extractive_answer(req.question, ctxs)  # ← artık kullanılıyor
-    generative = ""
-    if GEMINI_KEY:  # güvenli çağrı
-        generative = generate_answer(
-            system_hint="Hyundai i20 kullanım kılavuzuna dayalı teknik asistan.",
-            question=req.question,
-            context="\n\n".join(ctxs),
-            lang="tr",
-        )
-
-    return {
-        "question": req.question,
-        "answer_extractive": extractive,
-        "answer_generative": generative or (ctxs[0] if ctxs else ""),
-        "sources": sources,
-    }
+    return {"question": req.question, "answer": answer, "sources": sources}
