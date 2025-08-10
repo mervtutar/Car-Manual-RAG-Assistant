@@ -50,13 +50,7 @@ Car-Manual-RAG-Assistant/
 - **Modern Web UI (React)**
     - Users can ask questions, view history, and see chunk sources in a clean web interface.
 
-**Models used:**
 
-Embedding: paraphrase-multilingual-MiniLM-L12-v2
-
-Extractive: dbmdz/bert-base-turkish-cased
-
-Generative: ytu-ce-cosmos/turkish-gpt2-large
 
 ---
 
